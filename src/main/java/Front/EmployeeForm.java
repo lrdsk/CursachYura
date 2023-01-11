@@ -16,15 +16,15 @@ import java.util.List;
 
 
 public class EmployeeForm implements ActionListener{
+    private String employeeName;
     private EmployeeService employeeService;
-    private List<Employee> data1;
+    private List<Employee> listEmployees;
     private JPanel panel1;
     private JList list;
     private JButton AddButton;
     private JButton RedactButton;
     private JButton DelButton;
     private JButton ExitButton;
-
     public static JFrame frame;
 
     private void CreateForm(){
@@ -43,20 +43,25 @@ public class EmployeeForm implements ActionListener{
         frame.setVisible(true);
     }
 
+    private String getNameFromListInfo(String[] select){
+        String[] strOfEmployee = select[0].split("'");
+        this.employeeName = strOfEmployee[1];
+        return employeeName;
+    }
     public EmployeeForm(EmployeeService employeeService) throws SQLException {
         this.employeeService = employeeService;
-        this.data1 = new ArrayList<>(employeeService.getAllEmployees());
+        this.listEmployees = new ArrayList<>(employeeService.getAllEmployees());
         ExitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                frame.setVisible(false);
+                frame.dispose();
             }
         });
         ExitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    MainForm mainForm=new MainForm(employeeService);
+                    MainForm mainForm = new MainForm(employeeService);
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -67,30 +72,43 @@ public class EmployeeForm implements ActionListener{
         AddButton.addActionListener(new ActionListener() {
             @Override//
             public void actionPerformed(ActionEvent e) {
-                AddEmployee addEmployee=new AddEmployee();
+                frame.dispose();
+                try {
+                    AddEmployee addEmployee = new AddEmployee(employeeService);
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
-
 
 
         final String[] select = {new String()};//это бред чтобы разобраться
         list.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                select[0] = list.getSelectedValue().toString();// в select записывается полностью строка по типу Name = 'Arturik', Salary = 5500, id = 11
-                System.out.println(select[0]);// интересный факт: SelectionListener работает при нажатии на элемент и отпускании его, но это ничего страшного
+               if(list.getSelectedValue() != null) {
+                   select[0] = list.getSelectedValue().toString();
+                   employeeName = getNameFromListInfo(select);
+                   System.out.println(employeeName);// интересный факт: SelectionListener работает при нажатии на элемент и отпускании его, но это ничего страшного
+               }
             }
         });
+
        DelButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {//это кнопка удаления элемента, но нужно выделить из select только имя, чтобы сработал метод удаления по имени
                 try {
-                    employeeService.deleteEmployeeByName("Arturik");// вместо артурика нужно закинутб имя из select
+                    employeeService.deleteEmployeeByName(employeeName);// вместо артурика нужно закинутб имя из select
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
                 }
-                frame.setVisible(false);//для того, чтобы данные изменились в списке
-                CreateForm();
+                try {
+                    list.setListData(employeeService.getAllEmployees().toArray());
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+                //frame.setVisible(false);//для того, чтобы данные изменились в списке
+                //CreateForm();
             }
 
        });

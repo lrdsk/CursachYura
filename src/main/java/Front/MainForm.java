@@ -34,7 +34,7 @@ public class MainForm extends JFrame{
         EmployeeButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                frame.setVisible(false);
+                frame.dispose();
             }
         });
     }

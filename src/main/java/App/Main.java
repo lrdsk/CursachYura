@@ -18,7 +18,7 @@ public class Main {
 
         Shop shop = new Shop("Adidas", "Chern", "Wear", "Yura");
         Employee employee = new Employee(11, "Arturik", 5500);
-        Employee employee1 = new Employee(12, "Arturik1", 55001);
+        Employee employee1 = new Employee(11, "Arturik1", 55001);
 
         ShopService shopService = new ShopService(dateBase, shop);
         EmployeeService employeeService = new EmployeeService(dateBase);
