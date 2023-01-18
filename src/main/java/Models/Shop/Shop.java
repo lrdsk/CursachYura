@@ -1,7 +1,5 @@
 package Models.Shop;
 
-import Models.Employee.EmployeeFormatter;
-
 public class Shop {
     private String nameOfShop; //перечислины переменные для магазина, написаны только геттеры и сеттеры для них
     //никакого функционала класс не несет, грубо просто хранит в себе переменные
@@ -9,6 +7,9 @@ public class Shop {
     private String specializationOfShop;
     private String nameOfDirector;
 
+    public Shop(){
+
+    }
     public Shop(String nameOfShop, String address, String specializationOfShop, String nameOfDirector) {
         this.nameOfShop = nameOfShop;
         this.address = address;
@@ -47,9 +48,5 @@ public class Shop {
 
     public void setNameOfDirector(String nameOfDirector) {
         this.nameOfDirector = nameOfDirector;
-    }
-    @Override
-    public String toString(){
-        return ShopFormatter.formatShop(this);
     }
 }

@@ -1,17 +1,16 @@
 package Models.Employee;
 
-import java.util.HashMap;
-
 public class Employee {
-   private String nameEmployee;
-   private int salaryEmployee;
-   private int id;
+    private String nameEmployee;
+    private int salaryEmployee;
+    private int id;
 
-   public Employee(int id, String nameEmployee, int salaryEmployee) {
+    public Employee(){ }
+    public Employee(int id, String nameEmployee, int salaryEmployee) {
         this.nameEmployee = nameEmployee;
         this.salaryEmployee = salaryEmployee;
         this.id = id;
-   }
+    }
 
     public String getNameEmployee() {
         return nameEmployee;
@@ -37,8 +36,4 @@ public class Employee {
         this.id = id;
     }
 
-    @Override
-    public String toString() {
-       return EmployeeFormatter.formatEmployee(this);
-    }
 }

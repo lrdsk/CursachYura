@@ -1,7 +1,10 @@
 package Front;
 
 import Models.Employee.Employee;
+import Models.Employee.EmployeeFormatter;
 import Models.Employee.EmployeeService;
+import Models.Shop.ShopService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -13,12 +16,14 @@ import java.awt.event.ActionListener;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 
 public class EmployeeForm implements ActionListener{
-    private String employeeName;
+    private int employeeId;
     private EmployeeService employeeService;
-    private List<Employee> listEmployees;
+    private List<String> currentEmployeesList;
+    private ShopService shopService;
     private JPanel panel1;
     private JList list;
     private JButton AddButton;
@@ -29,28 +34,37 @@ public class EmployeeForm implements ActionListener{
 
     private void CreateForm(){
         frame=new JFrame("Employee");
-        frame.setPreferredSize(new Dimension(400, 300));
+        frame.setPreferredSize(new Dimension(700, 500));
         frame.add(panel1);
         frame.pack();
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
-        try {
-            list.setListData(employeeService.getAllEmployees().toArray());
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
-        }
+        list.setListData(new Object[]{});
+        employeeService.getAllEmployees().whenComplete((employeeList, throwable) -> {
+            if(throwable != null){
+                throwable.printStackTrace();
+                return;
+            }
+            SwingUtilities.invokeLater(() -> list.setListData(employeeList.toArray()));
+        });
         frame.setResizable(false);
         frame.setVisible(true);
     }
 
-    private String getNameFromListInfo(String[] select){
-        String[] strOfEmployee = select[0].split("'");
-        this.employeeName = strOfEmployee[1];
-        return employeeName;
+    private int getNameFromListInfo(String[] select){
+        String[] strOfEmployee = select[0].split(",");
+        String id = strOfEmployee[2];
+        id = id.replace("id=","");
+        id = id.replace("}","");
+        id = id.trim();
+        System.out.println(id);
+        this.employeeId = Integer.parseInt(id);
+        return employeeId;
     }
-    public EmployeeForm(EmployeeService employeeService) throws SQLException {
+    public EmployeeForm(EmployeeService employeeService, ShopService shopService) throws SQLException {
         this.employeeService = employeeService;
-        this.listEmployees = new ArrayList<>(employeeService.getAllEmployees());
+        this.shopService = shopService;
+
         ExitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -61,7 +75,7 @@ public class EmployeeForm implements ActionListener{
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    MainForm mainForm = new MainForm(employeeService);
+                    MainForm mainForm = new MainForm(employeeService,shopService);
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -74,7 +88,20 @@ public class EmployeeForm implements ActionListener{
             public void actionPerformed(ActionEvent e) {
                 frame.dispose();
                 try {
-                    AddEmployee addEmployee = new AddEmployee(employeeService);
+                    AddEmployee addEmployee = new AddEmployee(employeeService, shopService);
+                    addEmployee.getCompletableFuture().whenComplete((unused, throwable) -> {
+                        if(throwable != null){
+                            throwable.printStackTrace();
+                            return;
+                        }
+                        employeeService.getAllEmployees().whenComplete((employeeList, throwable2) ->{
+                            if(throwable2 != null){
+                                throwable2.printStackTrace();
+                                return;
+                            }
+                            SwingUtilities.invokeLater(() -> list.setListData(employeeList.toArray()));
+                        });
+                    });
                 } catch (SQLException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -82,45 +109,61 @@ public class EmployeeForm implements ActionListener{
         });
 
 
-        final String[] select = {new String()};//это бред чтобы разобраться
+        final String[] select = {new String()};
         list.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
                if(list.getSelectedValue() != null) {
                    select[0] = list.getSelectedValue().toString();
-                   employeeName = getNameFromListInfo(select);
-                   System.out.println(employeeName);// интересный факт: SelectionListener работает при нажатии на элемент и отпускании его, но это ничего страшного
+                   employeeId = getNameFromListInfo(select);
                }
             }
         });
 
        DelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {//это кнопка удаления элемента, но нужно выделить из select только имя, чтобы сработал метод удаления по имени
-                try {
-                    employeeService.deleteEmployeeByName(employeeName);// вместо артурика нужно закинутб имя из select
-                } catch (SQLException ex) {
-                    throw new RuntimeException(ex);
-                }
-                try {
-                    list.setListData(employeeService.getAllEmployees().toArray());
-                } catch (SQLException ex) {
-                    throw new RuntimeException(ex);
-                }
-                //frame.setVisible(false);//для того, чтобы данные изменились в списке
-                //CreateForm();
+            @Override 
+            public void actionPerformed(ActionEvent e) {
+                employeeService.getAllEmployees().whenComplete((employeeList, throwable) -> {
+                    if(throwable != null){
+                        throwable.printStackTrace();
+                        return;
+                    }
+                    try {
+                        employeeService.deleteEmployee(employeeId);
+                    } catch (JsonProcessingException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    SwingUtilities.invokeLater(() -> list.setListData(employeeList.toArray()));
+                });
             }
 
        });
         RedactButton.addActionListener(new ActionListener() {
-            @Override//
-            public void actionPerformed(ActionEvent e) {
-                RedactEmployee redactEmployee=new RedactEmployee();//кнопка добавления элемента в нее нужно засунуть инфу про нажатую строчку
 
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                employeeService.getEmployee(employeeId).whenComplete((employee, throwable) -> {
+                    //soEmployeeFormatter.formatEmployee(employee);
+                    RedactEmployee redactEmployee = new RedactEmployee(employeeService, employee);
+                    redactEmployee.getCompletableFuture().whenComplete((unused, throwable2) -> {
+                        if(throwable2 != null) {
+                            throwable2.printStackTrace();
+                            return;
+                        }
+                        employeeService.getAllEmployees().whenComplete((employeeList, throwable3) -> {
+                            if(throwable3 != null){
+                                throwable3.printStackTrace();
+                                return;
+                            }
+                            SwingUtilities.invokeLater(() -> list.setListData(employeeList.toArray()));
+                        });
+                    });
+                });
             }
 
         });
     }
+
 
     public void actionPerformed(ActionEvent e){
         CreateForm();

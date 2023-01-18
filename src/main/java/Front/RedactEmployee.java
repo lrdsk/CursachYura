@@ -1,24 +1,33 @@
 package Front;
 
+import Models.Employee.Employee;
 import Models.Employee.EmployeeService;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.concurrent.CompletableFuture;
 
 public class RedactEmployee {
+    private CompletableFuture<Void> completableFuture = new CompletableFuture<>();
+    private Employee employee;
     private JButton RedactButton;
-    private JTextField ID;
+    private EmployeeService employeeService;
+    private int idInt;
+    private JLabel ID;
     private JTextField Name;
+    private int salaryInt;
     private JTextField Salary;
     private JPanel panel1;
 
     private JFrame frame;
 
-    public RedactEmployee(){
+    public RedactEmployee(EmployeeService employeeService, Employee employee){
+        this.employeeService = employeeService;
+        this.employee = employee;
         frame=new JFrame("Add employee");
-        frame.setPreferredSize(new Dimension(400, 200));
+        frame.setPreferredSize(new Dimension(500, 300));
         frame.setResizable(false);
         frame.add(panel1);
         frame.pack();
@@ -27,12 +36,35 @@ public class RedactEmployee {
         RedactButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                frame.setVisible(false);
-                EmployeeForm.frame.setVisible(false);
-                //нужно вывести окно EmployeeForm, но я чет туплю
+                try{
+                    idInt = Integer.parseInt(ID.getText());
+                    salaryInt = Integer.parseInt(Salary.getText());
+                    Employee currentEmployee = new Employee(idInt, Name.getText(), salaryInt);
+                    employeeService.redactEmployee(idInt, Name.getText(), salaryInt).whenComplete((unused, throwable) -> {
+                        if(throwable != null){
+                            throwable.printStackTrace();
+                            completableFuture.completeExceptionally(throwable);
+                            return;
+                        }
+                        frame.dispose();
+                        completableFuture.complete(null);
+                    });
+
+                }catch(Exception exception){
+                    System.out.println("Неправильно введены данные.");
+                }
+
             }
         });
-        ID.setText("Привет");// из строки
+        String dataId = Integer.toString(employee.getId());
+        String dataSalary = Integer.toString(employee.getSalaryEmployee());
+        ID.setText(dataId);// из строки
+        Name.setText(employee.getNameEmployee());
+        Salary.setText(dataSalary);
+    }
+
+    public CompletableFuture<Void> getCompletableFuture() {
+        return completableFuture;
     }
 }
 
