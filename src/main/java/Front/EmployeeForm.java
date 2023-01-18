@@ -86,7 +86,7 @@ public class EmployeeForm implements ActionListener{
         AddButton.addActionListener(new ActionListener() {
             @Override//
             public void actionPerformed(ActionEvent e) {
-                frame.dispose();
+                //frame.dispose();
                 try {
                     AddEmployee addEmployee = new AddEmployee(employeeService, shopService);
                     addEmployee.getCompletableFuture().whenComplete((unused, throwable) -> {

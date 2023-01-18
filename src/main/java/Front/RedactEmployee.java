@@ -26,7 +26,7 @@ public class RedactEmployee {
     public RedactEmployee(EmployeeService employeeService, Employee employee){
         this.employeeService = employeeService;
         this.employee = employee;
-        frame=new JFrame("Add employee");
+        frame=new JFrame("Patch employee");
         frame.setPreferredSize(new Dimension(500, 300));
         frame.setResizable(false);
         frame.add(panel1);
@@ -52,6 +52,7 @@ public class RedactEmployee {
 
                 }catch(Exception exception){
                     System.out.println("Неправильно введены данные.");
+                    new AlarmWindowPatch();
                 }
 
             }

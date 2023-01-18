@@ -36,8 +36,6 @@ public class AddEmployee{
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        EmployeeForm employeeForm=new EmployeeForm(this.employeeService, this.shopService);
-        AddButton.addActionListener(employeeForm);
         AddButton.addActionListener(new ActionListener() {
 
             @Override
@@ -60,8 +58,9 @@ public class AddEmployee{
                 }catch (NumberFormatException | JsonProcessingException exception) {
                     System.out.println("Неправильно введено значение ID или Salary." +
                             "\nПоля должны быть заполнены в формате целых чисел.");
+                    new AlarmWindowAdd();
                 }
-                frame.setVisible(false);
+
             }
         });
     }
